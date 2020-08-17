@@ -1,6 +1,7 @@
 """
 Skript um einen CIP Rechner mit weniger als 7% CPU Auslastung zu Finden
 """
+from time import sleep
 
 import paramiko
 from dotenv import load_dotenv
@@ -28,7 +29,7 @@ for host in hosts:
         paramiko.AutoAddPolicy())
     ssh.connect(host, username=username, password=password)
     stdin, stdout, stderr = ssh.exec_command(
-        "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}' ")
+        "awk '{u=$2+$4; t=$2+$4+$5; if (NR==1){u1=u; t1=t;} else print ($2+$4-u1) * 100 / (t-t1); }' <(grep 'cpu ' /proc/stat) <(sleep 1;grep 'cpu ' /proc/stat)")
     stdin.close()
     for line in stdout.read().splitlines():
         print(host, line)
@@ -43,3 +44,4 @@ for host in hosts:
         except:
             print("Fehler")
     ssh.close()
+    sleep(1)
